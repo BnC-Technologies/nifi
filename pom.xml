@@ -30,11 +30,9 @@
         <module>nifi-mock</module>
         <module>nifi-nar-bundles</module>
         <module>nifi-assembly</module>
-        <module>nifi-docs</module>
         <module>nifi-maven-archetypes</module>
         <module>nifi-external</module>
         <module>nifi-toolkit</module>
-        <module>nifi-docker</module>
     </modules>
     <url>http://nifi.apache.org</url>
     <organization>
@@ -97,7 +95,7 @@
         <spring.version>4.3.10.RELEASE</spring.version>
         <spring.security.version>4.2.3.RELEASE</spring.security.version>
         <jersey.version>2.26</jersey.version>
-        <hadoop.version>2.7.3</hadoop.version>
+        <hadoop.version>3.0.0</hadoop.version>
         <hadoop.guava.version>12.0.1</hadoop.guava.version>
         <hadoop.http.client.version>4.2.5</hadoop.http.client.version>
         <hadoop.http.core.version>4.2.5</hadoop.http.core.version>
