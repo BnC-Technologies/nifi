@@ -346,9 +346,9 @@ public class SocketRemoteSiteListener implements RemoteSiteListener {
                     remoteInputHostVal = InetAddress.getLocalHost().getHostName();
                 }
                 final Boolean isSiteToSiteSecure = nifiProperties.isSiteToSiteSecure();
-                final Integer apiPort = isSiteToSiteSecure ? nifiProperties.getSslPort() : nifiProperties.getPort();
+                final Integer apiPort = isSiteToSiteSecure ? nifiProperties.getSslPublicPort() : nifiProperties.getPublicPort();
                 final NodeInformation self = new NodeInformation(remoteInputHostVal,
-                        nifiProperties.getRemoteInputPort(),
+                        nifiProperties.getRemoteInputPublicPort(),
                         nifiProperties.getRemoteInputHttpPort(),
                         apiPort != null ? apiPort : 0, // Avoid potential NullPointerException.
                         isSiteToSiteSecure, 0); // TotalFlowFiles doesn't matter if it's a standalone NiFi.

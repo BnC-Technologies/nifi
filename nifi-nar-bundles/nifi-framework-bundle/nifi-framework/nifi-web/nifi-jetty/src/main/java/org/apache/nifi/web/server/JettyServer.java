@@ -155,14 +155,7 @@ public class JettyServer implements NiFiServer {
         // load wars from the bundle
         Handler warHandlers = loadWars(bundles);
 
-        // Create a handler for the host header and add it to the server
-        String serverName = determineServerHostname();
-        int serverPort = determineServerPort();
-        HostHeaderHandler hostHeaderHandler = new HostHeaderHandler(serverName, serverPort);
-        logger.info("Created HostHeaderHandler [" + hostHeaderHandler.toString() + "]");
-
         HandlerList allHandlers = new HandlerList();
-        allHandlers.addHandler(hostHeaderHandler);
         allHandlers.addHandler(warHandlers);
         server.setHandler(allHandlers);
     }
@@ -607,8 +600,6 @@ public class JettyServer implements NiFiServer {
         httpConfiguration.setRequestHeaderSize(headerSize);
         httpConfiguration.setResponseHeaderSize(headerSize);
 
-        addHostHeaderSanitizationCustomizer(httpConfiguration);
-
         if (props.getPort() != null) {
             final Integer port = props.getPort();
             if (port < 0 || (int) Math.pow(2, 16) <= port) {
@@ -710,7 +701,6 @@ public class JettyServer implements NiFiServer {
         httpsConfiguration.setSecureScheme("https");
         httpsConfiguration.setSecurePort(props.getSslPort());
         httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
-        addHostHeaderSanitizationCustomizer(httpsConfiguration);
 
         // build the connector
         return new ServerConnector(server,
@@ -718,17 +708,6 @@ public class JettyServer implements NiFiServer {
                 new HttpConnectionFactory(httpsConfiguration));
     }
 
-    private void addHostHeaderSanitizationCustomizer(HttpConfiguration httpConfiguration) {
-        // Add the HostHeaderCustomizer to the configuration
-        HttpConfiguration.Customizer hostHeaderCustomizer;
-        if (props.getSslPort() != null) {
-            hostHeaderCustomizer = new HostHeaderSanitizationCustomizer(props.getProperty(NiFiProperties.WEB_HTTPS_HOST), props.getSslPort());
-        } else {
-            hostHeaderCustomizer = new HostHeaderSanitizationCustomizer(props.getProperty(NiFiProperties.WEB_HTTP_HOST), props.getPort());
-        }
-        httpConfiguration.addCustomizer(hostHeaderCustomizer);
-        logger.info("Added HostHeaderSanitizationCustomizer to HttpConfiguration: " + hostHeaderCustomizer);
-    }
 
     private SslContextFactory createSslContextFactory() {
         final SslContextFactory contextFactory = new SslContextFactory();

@@ -24,14 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -70,6 +63,7 @@ public abstract class NiFiProperties {
     public static final String H2_URL_APPEND = "nifi.h2.url.append";
     public static final String REMOTE_INPUT_HOST = "nifi.remote.input.host";
     public static final String REMOTE_INPUT_PORT = "nifi.remote.input.socket.port";
+    public static final String REMOTE_INPUT_PUBLIC_PORT = "nifi.remote.input.socket.public.port";
     public static final String SITE_TO_SITE_SECURE = "nifi.remote.input.secure";
     public static final String SITE_TO_SITE_HTTP_ENABLED = "nifi.remote.input.http.enabled";
     public static final String SITE_TO_SITE_HTTP_TRANSACTION_TTL = "nifi.remote.input.http.transaction.ttl";
@@ -191,6 +185,7 @@ public abstract class NiFiProperties {
     public static final String CLUSTER_IS_NODE = "nifi.cluster.is.node";
     public static final String CLUSTER_NODE_ADDRESS = "nifi.cluster.node.address";
     public static final String CLUSTER_NODE_PROTOCOL_PORT = "nifi.cluster.node.protocol.port";
+    public static final String CLUSTER_NODE_PROTOCOL_PUBLIC_PORT = "nifi.cluster.node.protocol.public.port";
     public static final String CLUSTER_NODE_PROTOCOL_THREADS = "nifi.cluster.node.protocol.threads";
     public static final String CLUSTER_NODE_PROTOCOL_MAX_THREADS = "nifi.cluster.node.protocol.max.threads";
     public static final String CLUSTER_NODE_CONNECTION_TIMEOUT = "nifi.cluster.node.connection.timeout";
@@ -411,6 +406,15 @@ public abstract class NiFiProperties {
     }
 
     /**
+     * The socket port to listen on for a Remote Input Port.
+     *
+     * @return the remote input port for RAW socket communication
+     */
+    public Integer getRemoteInputPublicPort() {
+        return getPropertyAsPort(REMOTE_INPUT_PUBLIC_PORT, DEFAULT_REMOTE_INPUT_PORT);
+    }
+
+    /**
      * @return False if property value is 'false'; True otherwise.
      */
     public Boolean isSiteToSiteSecure() {
@@ -463,6 +467,7 @@ public abstract class NiFiProperties {
         }
         return port;
     }
+
 
     /**
      * Returns the directory to which Templates are to be persisted
@@ -578,10 +583,27 @@ public abstract class NiFiProperties {
         return port;
     }
 
+    public Integer getPublicPort() {
+        Integer port = null;
+        try {
+            port = Integer.parseInt(getProperty(WEB_HTTP_PORT_FORWARDING, getProperty(WEB_HTTP_PORT)));
+        } catch (NumberFormatException nfe) {
+        }
+        return port;
+    }
+
     public Integer getSslPort() {
         Integer sslPort = null;
         try {
             sslPort = Integer.parseInt(getProperty(WEB_HTTPS_PORT));
+        } catch (NumberFormatException nfe) {
+        }
+        return sslPort;
+    }
+    public Integer getSslPublicPort() {
+        Integer sslPort = null;
+        try {
+            sslPort = Integer.parseInt(getProperty(WEB_HTTPS_PORT_FORWARDING,getProperty(WEB_HTTPS_PORT)));
         } catch (NumberFormatException nfe) {
         }
         return sslPort;
@@ -703,7 +725,7 @@ public abstract class NiFiProperties {
             if (StringUtils.isBlank(socketAddress)) {
                 socketAddress = "localhost";
             }
-            int socketPort = getClusterNodeProtocolPort();
+            int socketPort = getClusterNodeProtocolPublicPort();
             return InetSocketAddress.createUnresolved(socketAddress, socketPort);
         } catch (Exception ex) {
             throw new RuntimeException("Invalid node protocol address/port due to: " + ex, ex);
@@ -713,6 +735,14 @@ public abstract class NiFiProperties {
     public Integer getClusterNodeProtocolPort() {
         try {
             return Integer.parseInt(getProperty(CLUSTER_NODE_PROTOCOL_PORT));
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
+    }
+
+    public Integer getClusterNodeProtocolPublicPort() {
+        try {
+            return Integer.parseInt(getProperty(CLUSTER_NODE_PROTOCOL_PUBLIC_PORT));
         } catch (NumberFormatException nfe) {
             return null;
         }
@@ -982,7 +1012,7 @@ public abstract class NiFiProperties {
                 host = getProperty(WEB_HTTP_HOST);
             }
             // get port
-            port = getPort();
+            port = getPublicPort();
 
             if (port == null) {
                 throw new RuntimeException(String.format("The %s must be specified if running in a cluster with %s set to false.", WEB_HTTP_PORT, CLUSTER_PROTOCOL_IS_SECURE));
@@ -995,7 +1025,7 @@ public abstract class NiFiProperties {
                 host = getProperty(WEB_HTTPS_HOST);
             }
             // get port
-            port = getSslPort();
+            port = getSslPublicPort();
 
             if (port == null) {
                 throw new RuntimeException(String.format("The %s must be specified if running in a cluster with %s set to true.", WEB_HTTPS_PORT, CLUSTER_PROTOCOL_IS_SECURE));
@@ -1288,7 +1318,7 @@ public abstract class NiFiProperties {
 
     /**
      * Returns the whitelisted proxy context paths as a comma-delimited string. The paths have been normalized to the form {@code /some/context/path}.
-     *
+     * <p>
      * Note: Calling {@code NiFiProperties.getProperty(NiFiProperties.WEB_PROXY_CONTEXT_PATH)} will not normalize the paths.
      *
      * @return the path(s)

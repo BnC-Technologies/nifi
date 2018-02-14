@@ -70,17 +70,17 @@ public class ClusterProtocolHeartbeatMonitor extends AbstractHeartbeatMonitor im
             hostname = "localhost";
         }
 
-        final String port = nifiProperties.getProperty(NiFiProperties.CLUSTER_NODE_PROTOCOL_PORT);
+        final String port = nifiProperties.getProperty(NiFiProperties.CLUSTER_NODE_PROTOCOL_PUBLIC_PORT,nifiProperties.getProperty(NiFiProperties.CLUSTER_NODE_PROTOCOL_PORT));
         if (port == null || port.trim().isEmpty()) {
             throw new RuntimeException("Unable to determine which port Cluster Coordinator Protocol is listening on because the '"
-                    + NiFiProperties.CLUSTER_NODE_PROTOCOL_PORT + "' property is not set");
+                    + NiFiProperties.CLUSTER_NODE_PROTOCOL_PUBLIC_PORT + "' property is not set");
         }
 
         try {
             Integer.parseInt(port);
         } catch (final NumberFormatException nfe) {
             throw new RuntimeException("Unable to determine which port Cluster Coordinator Protocol is listening on because the '"
-                    + NiFiProperties.CLUSTER_NODE_PROTOCOL_PORT + "' property is set to '" + port + "', which is not a valid port number.");
+                    + NiFiProperties.CLUSTER_NODE_PROTOCOL_PUBLIC_PORT + "' property is set to '" + port + "', which is not a valid port number.");
         }
 
         heartbeatAddress = hostname + ":" + port;
